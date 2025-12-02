@@ -1,23 +1,28 @@
 name: Automatisation des tests DevSecOps
+
 on: push
+
 jobs:
   Dependances:
     runs-on: ubuntu-latest
     steps:
-      - name: Dependances
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Contrôle des vulnérabilités (Trivy FS)
         run: |
-          echo "ecrire ici le scrypt de contrôle des dépendances"
+          docker run --rm -v ${{ github.workspace }}:/app aquasec/trivy:latest fs /app \
+            --scanners vuln \
+            --severity HIGH,CRITICAL \
+            --exit-code 1
+
   Dockerfile:
     runs-on: ubuntu-latest
-    needs: Dependances
+    needs: Dependances # Ce job ne se lance que si 'Dependances' est vert
     steps:
-      - name: Test Dockerfile
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Linting Dockerfile (Hadolint)
         run: |
-          echo "ecrire ici le scrypt de contrôle du Dockerfile"
-  Deploy:
-    runs-on: ubuntu-latest
-    needs: Dockerfile
-    steps:
-      - name: Deploy
-        run: |
-          echo "Rien à faire ici. Votre application est prête à être déployée"
+          docker run --rm -i hadolint/hadolint < Dockerfile
